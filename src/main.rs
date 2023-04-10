@@ -18,38 +18,49 @@ struct Args {
     url: String,
 
     /// Alias for the message sender
-    #[structopt(short, long, default_value = &HOSTNAME)]
+    #[structopt(short, long, default_value = &HOSTNAME, env = "ROCKET_NOTIFY_ALIAS")]
     alias: String,
 
     /// Set the sender's icon to an emoji
-    #[structopt(short = "i", long = "icon", default_value = ":computer:")]
+    #[structopt(
+        short = "i",
+        long = "icon",
+        default_value = ":computer:",
+        env = "ROCKET_NOTIFY_ICON"
+    )]
     emoji: String,
 
+    /// Set the sender's icon to the provided URL (replaces -i,--icon)
+    #[structopt(short = "A", long = "avatar", env = "ROCKET_NOTIFY_AVATAR")]
+    avatar: Option<String>,
+
     /// Title of the message
-    #[structopt(short, long, default_value)]
+    #[structopt(short, long, default_value, env = "ROCKET_NOTIFY_TITLE")]
     title: String,
 
     /// Color of the message header
-    #[structopt(short, long, default_value = "darkgrey")]
+    #[structopt(short, long, default_value = "darkgrey", env = "ROCKET_NOTIFY_COLOR")]
     color: Color,
 
     /// Send with message block collapsed
-    #[structopt(short, long)]
+    #[structopt(short, long, env = "ROCKET_NOTIFY_MINIMIZE")]
     minimize: bool,
 
     /// Channel to which the mesage will be sent, like '#general' or '@eric'
+    #[structopt(env = "ROCKET_NOTIFY_CHANNEL")]
     channel: String,
 
     /// Message to send
+    #[structopt(env = "ROCKET_NOTIFY_MESSAGE")]
     message: String,
 }
 
 /// Convenience macro for pretty-printing errors
-fn print_err(msg: &str) {
+fn print_err<S: std::fmt::Display>(msg: S) {
     eprintln!("\x1b[1;31merror:\x1b[m {msg}");
 }
 
-fn print_success(msg: &str) {
+fn print_success<S: std::fmt::Display>(msg: S) {
     println!("\x1b[0;32msuccess:\x1b[m {msg}");
 }
 
@@ -61,10 +72,9 @@ fn main() {
         process::exit(1);
     }
 
-    let message = Message::new()
+    let mut message = Message::new()
         .channel(&args.channel)
         .text(&args.title)
-        .emoji(&args.emoji)
         .alias(&args.alias)
         .attachment(
             Attachment::new()
@@ -74,13 +84,18 @@ fn main() {
                 .collapsed(args.minimize),
         );
 
+    message = match args.avatar.is_some() {
+        true => message.avatar(args.avatar.unwrap()),
+        false => message.emoji(args.emoji),
+    };
+
     match Client::new(&args.url).post_message(&message) {
         Err(e) => {
-            print_err(&e.to_string());
+            print_err(e);
             process::exit(1);
         }
-        Ok(r) if !r.is_success() => {
-            print_err(&r.to_string());
+        Ok(r) if !r.success() => {
+            print_err(r);
             process::exit(1);
         }
         Ok(_) => print_success("message sent!"),
