@@ -1,14 +1,14 @@
 use csscolorparser::Color;
 use rocket_notify::rocketchat::{Attachment, Client, Message};
-use std::process;
-use structopt::{lazy_static::lazy_static, StructOpt};
+use std::{process, sync::LazyLock};
+use structopt::StructOpt;
 
-lazy_static! {
-    static ref HOSTNAME: String = hostname::get()
+static HOSTNAME: LazyLock<String> = LazyLock::new(|| {
+    hostname::get()
         .unwrap_or("rocket-notify".into())
         .to_string_lossy()
-        .replace(".local", "");
-}
+        .replace(".local", "")
+});
 
 #[derive(Debug, StructOpt)]
 #[structopt(about)]
@@ -55,11 +55,10 @@ struct Args {
     message: String,
 }
 
-/// Convenience macro for pretty-printing errors
+// Convenience fns for pretty-printing errors
 fn print_err<S: std::fmt::Display>(msg: S) {
     eprintln!("\x1b[1;31merror:\x1b[m {msg}");
 }
-
 fn print_success<S: std::fmt::Display>(msg: S) {
     println!("\x1b[0;32msuccess:\x1b[m {msg}");
 }
@@ -68,7 +67,9 @@ fn main() {
     let args = Args::from_args();
 
     if args.url.is_empty() {
-        print_err("ROCKET_NOTIFY_URL not set.\nPlease acquire a webhook url from an admin, and then\n  `export ROCKET_NOTIFY_URL=https://{webhookURL}`");
+        print_err(
+            "ROCKET_NOTIFY_URL not set.\nPlease acquire a webhook url from an admin, and then\n  `export ROCKET_NOTIFY_URL=https://{webhookURL}`",
+        );
         process::exit(1);
     }
 
@@ -80,13 +81,14 @@ fn main() {
             Attachment::new()
                 .title(if args.minimize { &args.title } else { "" })
                 .text(&args.message)
-                .color(args.color.to_hex_string())
+                .color(args.color.to_css_hex())
                 .collapsed(args.minimize),
         );
 
-    message = match args.avatar.is_some() {
-        true => message.avatar(args.avatar.unwrap()),
-        false => message.emoji(args.emoji),
+    message = if args.avatar.is_some() {
+        message.avatar(args.avatar.unwrap())
+    } else {
+        message.emoji(args.emoji)
     };
 
     match Client::new(&args.url).post_message(&message) {
@@ -94,10 +96,6 @@ fn main() {
             print_err(e);
             process::exit(1);
         }
-        Ok(r) if !r.success() => {
-            print_err(r);
-            process::exit(1);
-        }
         Ok(_) => print_success("message sent!"),
-    };
+    }
 }

@@ -25,10 +25,7 @@
 ///     .post_message(&message)
 ///     .expect("Failed to POST message");
 ///
-/// match response.success() {
-///     true => println!("OK: Posted to {}", response.channel()),
-///     false => println!("{}: {}", response.error_type(), response.error_message()),
-/// };
+/// println!("OK: Posted to {}", response.channel());
 /// ```
 pub mod rocketchat {
 
@@ -36,6 +33,7 @@ pub mod rocketchat {
     use reqwest::blocking::Client as ReqwestClient;
     use serde::{Deserialize, Serialize};
     use std::fmt::Display;
+    use thiserror::Error;
 
     /// Attachment fields that annotate an [`Attachment`]. Allows for "tables" or "columns" to be displayed on messages.
     ///
@@ -60,6 +58,7 @@ pub mod rocketchat {
 
     impl AttachmentField {
         /// Create a new [`AttachmentField`].
+        #[must_use]
         pub fn new() -> Self {
             Self {
                 ..Default::default()
@@ -67,18 +66,21 @@ pub mod rocketchat {
         }
 
         /// Set whether the field should be a short field.
+        #[must_use]
         pub fn short(mut self, short: bool) -> Self {
             self.short = short;
             self
         }
 
         /// Set the title of the field.
+        #[must_use]
         pub fn title<S: Into<String>>(mut self, title: S) -> Self {
             self.title = title.into();
             self
         }
 
         /// Set the value of the field, displayed underneath the title value.
+        #[must_use]
         pub fn value<S: Into<String>>(mut self, value: S) -> Self {
             self.value = value.into();
             self
@@ -147,6 +149,7 @@ pub mod rocketchat {
 
     impl Attachment {
         /// Create a new [`Attachment`].
+        #[must_use]
         pub fn new() -> Self {
             Self {
                 ts: Local::now(),
@@ -155,12 +158,14 @@ pub mod rocketchat {
         }
 
         /// Set the attachment left border color. Can be any [background-color](https://developer.mozilla.org/en-US/docs/Web/CSS/background-color) value.
+        #[must_use]
         pub fn color<S: Into<String>>(mut self, color: S) -> Self {
             self.color = color.into();
             self.update_ts()
         }
 
         /// Set the text to display for the attachment, it is different than the message's text.
+        #[must_use]
         pub fn text<S: Into<String>>(mut self, text: S) -> Self {
             self.text = text.into();
             self.update_ts()
@@ -172,84 +177,98 @@ pub mod rocketchat {
         }
 
         /// An image that displays to the left of the text, looks better when this is relatively small.
+        #[must_use]
         pub fn thumb_url<S: Into<String>>(mut self, thumb_url: S) -> Self {
             self.thumb_url = thumb_url.into();
             self
         }
 
         /// Set the attachment time to a clickable link.
+        #[must_use]
         pub fn message_link<S: Into<String>>(mut self, message_link: S) -> Self {
             self.message_link = message_link.into();
             self
         }
 
         /// Set the image, audio, and video sections to be collapsed.
+        #[must_use]
         pub fn collapsed(mut self, collapsed: bool) -> Self {
             self.collapsed = collapsed;
             self
         }
 
         /// Set the name of the message author.
+        #[must_use]
         pub fn author_name<S: Into<String>>(mut self, author_name: S) -> Self {
             self.author_name = author_name.into();
             self
         }
 
         /// Set the author's name to a clickable link.
+        #[must_use]
         pub fn author_link<S: Into<String>>(mut self, author_link: S) -> Self {
             self.author_link = author_link.into();
             self
         }
 
         /// Set a tiny icon to the left of the Author's name.
+        #[must_use]
         pub fn author_icon<S: Into<String>>(mut self, author_icon: S) -> Self {
             self.author_icon = author_icon.into();
             self
         }
 
         /// Set the title for the attachment. Displays under the author.
+        #[must_use]
         pub fn title<S: Into<String>>(mut self, title: S) -> Self {
             self.title = title.into();
             self.update_ts()
         }
 
         /// Set the this attachment title to a clickable link.
+        #[must_use]
         pub fn title_link<S: Into<String>>(mut self, title_link: S) -> Self {
             self.title_link = title_link.into();
             self
         }
 
         /// Enable a download icon that appears on the attachment. Clicking this saves the link to file.
+        #[must_use]
         pub fn title_link_download(mut self, title_link_download: bool) -> Self {
             self.title_link_download = title_link_download;
             self
         }
 
         /// Set an image to display, will be "big" and easy to see.
+        #[must_use]
         pub fn image_url<S: Into<String>>(mut self, image_url: S) -> Self {
             self.image_url = image_url.into();
             self
         }
 
         /// Audio file to play, supports any [html audio](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio).
+        #[must_use]
         pub fn audio_url<S: Into<String>>(mut self, audio_url: S) -> Self {
             self.audio_url = audio_url.into();
             self
         }
 
         /// Video file to play, supports any [html video](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video).
+        #[must_use]
         pub fn video_url<S: Into<String>>(mut self, video_url: S) -> Self {
             self.video_url = video_url.into();
             self
         }
 
         /// Add an [`AttachmentField`] to the attachment.
+        #[must_use]
         pub fn field(mut self, field: AttachmentField) -> Self {
             self.fields.push(field);
             self
         }
 
         /// Add multiple [`AttachmentField`] to the attachment.
+        #[must_use]
         pub fn fields(mut self, fields: Vec<AttachmentField>) -> Self {
             self.fields = fields;
             self
@@ -272,8 +291,9 @@ pub mod rocketchat {
     ///     .emoji(":computer:");
     /// ```
     #[derive(Debug, Default, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct Message {
-        #[serde(alias = "roomId", skip_serializing_if = "String::is_empty")]
+        #[serde(skip_serializing_if = "String::is_empty")]
         room_id: String,
 
         #[serde(skip_serializing_if = "String::is_empty")]
@@ -296,6 +316,7 @@ pub mod rocketchat {
 
     impl Message {
         /// Create a new [`Message`].
+        #[must_use]
         pub fn new() -> Self {
             Self {
                 ..Default::default()
@@ -303,6 +324,7 @@ pub mod rocketchat {
         }
 
         /// Set the room id of where the message is to be sent. Resets
+        #[must_use]
         pub fn room_id<S: Into<String>>(mut self, room_id: S) -> Self {
             self.room_id = room_id.into();
             if !self.channel.is_empty() && !self.room_id.is_empty() {
@@ -312,6 +334,7 @@ pub mod rocketchat {
         }
 
         /// Set the channel where the message is to be sent. Set the channel where the message is to be sent, with the prefix in front of it. `#` refers to channel, `@` refers to a username
+        #[must_use]
         pub fn channel<S: Into<String>>(mut self, channel: S) -> Self {
             self.channel = channel.into();
             if !self.room_id.is_empty() && !self.channel.is_empty() {
@@ -321,40 +344,61 @@ pub mod rocketchat {
         }
 
         /// Set the text of the message. Text is optional because of attachments.
+        #[must_use]
         pub fn text<S: Into<String>>(mut self, text: S) -> Self {
             self.text = text.into();
             self
         }
 
         /// Set the message's name to appear as the given alias. The posting your username will still display.
+        #[must_use]
         pub fn alias<S: Into<String>>(mut self, alias: S) -> Self {
             self.alias = alias.into();
             self
         }
 
         /// Set the avatar on the message to be an emoji.
+        #[must_use]
         pub fn emoji<S: Into<String>>(mut self, emoji: S) -> Self {
             self.emoji = emoji.into();
             self
         }
 
         /// Set the avatar of the message to the provided image url.
+        #[must_use]
         pub fn avatar<S: Into<String>>(mut self, avatar: S) -> Self {
             self.avatar = avatar.into();
             self
         }
 
         /// Add an [`Attachment`] to the message
+        #[must_use]
         pub fn attachment(mut self, attachment: Attachment) -> Self {
             self.attachments.push(attachment);
             self
         }
 
         /// Add multiple [`Attachment`] to the message
+        #[must_use]
         pub fn attachments(mut self, attachments: Vec<Attachment>) -> Self {
             self.attachments = attachments;
             self
         }
+    }
+
+    #[derive(Debug, Error)]
+    pub enum ClientError {
+        /// The cleint was configured with an invalid url
+        #[error("invalid URL: {0}")]
+        InvalidUrl(String),
+
+        /// An error sending the request
+        #[error(transparent)]
+        RequestError(#[from] reqwest::Error),
+
+        /// The response from the server was an error
+        #[error("server response was an error: {0}")]
+        ServerError(String),
     }
 
     /// A Rocket.Chat Message API Client
@@ -371,7 +415,7 @@ pub mod rocketchat {
         /// use rocket_notify::rocketchat::Client;
         /// let client = Client::new("https://my.rocket.com/hooks/db78d646/b072678678e8c74a");
         /// ```
-        pub fn new<S: Into<String>>(url: S) -> Client {
+        pub fn new<S: Into<String>>(url: S) -> Self {
             Client { url: url.into() }
         }
 
@@ -389,16 +433,20 @@ pub mod rocketchat {
         ///     .post_message(&message)
         ///     .unwrap();
         /// ```
-        pub fn post_message(
-            &self,
-            message: &Message,
-        ) -> Result<Response, Box<dyn std::error::Error>> {
+        /// # Errors
+        /// Returns a [`ClientError`] posting the message fails, or if posting works but a server-side error occurs.
+        pub fn post_message(&self, message: &Message) -> Result<Response, ClientError> {
             let res = ReqwestClient::new()
                 .post(&self.url)
                 .json(message)
                 .send()?
                 .json::<Response>()?;
-            Ok(res)
+
+            if res.success() {
+                Ok(res)
+            } else {
+                Err(ClientError::ServerError(res.error))
+            }
         }
     }
 
@@ -412,16 +460,19 @@ pub mod rocketchat {
     }
 
     impl ResponseMessageU {
+        #[must_use]
         pub fn id(&self) -> &String {
             &self.id
         }
 
+        #[must_use]
         pub fn username(&self) -> &String {
             &self.username
         }
     }
 
     #[derive(Debug, Default, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct ResponseMessage {
         #[serde(default)]
         alias: String,
@@ -429,7 +480,7 @@ pub mod rocketchat {
         #[serde(default)]
         msg: String,
 
-        #[serde(alias = "parseUrls", default)]
+        #[serde(default)]
         parse_urls: bool,
 
         #[serde(default)]
@@ -444,7 +495,7 @@ pub mod rocketchat {
         #[serde(default)]
         rid: String,
 
-        #[serde(alias = "updatedAt", default)]
+        #[serde(default)]
         updated_at: DateTime<Local>,
 
         #[serde(alias = "_id", default)]
@@ -452,38 +503,47 @@ pub mod rocketchat {
     }
 
     impl ResponseMessage {
+        #[must_use]
         pub fn alias(&self) -> &str {
             self.alias.as_ref()
         }
 
+        #[must_use]
         pub fn msg(&self) -> &str {
             self.msg.as_ref()
         }
 
+        #[must_use]
         pub fn parse_urls(&self) -> bool {
             self.parse_urls
         }
 
+        #[must_use]
         pub fn groupable(&self) -> bool {
             self.groupable
         }
 
+        #[must_use]
         pub fn u(&self) -> &ResponseMessageU {
             &self.u
         }
 
+        #[must_use]
         pub fn ts(&self) -> DateTime<Local> {
             self.ts
         }
 
+        #[must_use]
         pub fn rid(&self) -> &str {
             self.rid.as_ref()
         }
 
+        #[must_use]
         pub fn updated_at(&self) -> DateTime<Local> {
             self.updated_at
         }
 
+        #[must_use]
         pub fn id(&self) -> bool {
             self.id
         }
@@ -509,6 +569,7 @@ pub mod rocketchat {
     /// }
     /// ```
     #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct Response {
         #[serde(default)]
         ts: DateTime<Local>,
@@ -525,31 +586,37 @@ pub mod rocketchat {
         #[serde(default)]
         error: String,
 
-        #[serde(default, alias = "errorType")]
+        #[serde(default)]
         error_type: String,
     }
 
     impl Response {
+        #[must_use]
         pub fn ts(&self) -> DateTime<Local> {
             self.ts
         }
 
+        #[must_use]
         pub fn channel(&self) -> &String {
             &self.channel
         }
 
+        #[must_use]
         pub fn message(&self) -> &ResponseMessage {
             &self.message
         }
 
+        #[must_use]
         pub fn success(&self) -> bool {
             self.success
         }
 
+        #[must_use]
         pub fn error_message(&self) -> &String {
             &self.error
         }
 
+        #[must_use]
         pub fn error_type(&self) -> &String {
             &self.error_type
         }
@@ -559,9 +626,11 @@ pub mod rocketchat {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             if self.success {
                 f.write_str("ok")
-            } else if self.error.is_empty() && !self.error_type.is_empty() {
+            } else if !self.error.is_empty() {
+                f.write_str(&self.error)
+            } else if !self.error_type.is_empty() {
                 f.write_str(&self.error_type)
-            } else if self.error.is_empty() && self.error_type.is_empty() {
+            } else if self.error_type.is_empty() {
                 f.write_str("unknown error")
             } else {
                 f.write_str(&self.error)

@@ -3,18 +3,17 @@ name = "rocket-notify"
 description = "Simple command line client to send messages to Rocket.Chat"
 authors = ["Ian McLinden"]
 version = "1.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2024"
 
 [dependencies]
-chrono = { version = "^0.4", features = ["serde"] }
-csscolorparser = { version = "^0.6", features = ["serde"] }
-hostname = "^0.3"
-reqwest = { version = "^0.11", features = [
+chrono = { version = "0.4.42", features = ["serde"] }
+csscolorparser = { version = "0.7.2", features = ["serde"] }
+hostname = "0.4.1"
+reqwest = { version = "0.12.23", features = [
     "json",
     "blocking",
     "rustls-tls",
 ], default-features = false }
-serde = "^1.0"
-structopt = { version = "^0.3", default-features = false }
+serde = "1.0.228"
+structopt = { version = "0.3.26", default-features = false }
+thiserror = "2.0.17"
