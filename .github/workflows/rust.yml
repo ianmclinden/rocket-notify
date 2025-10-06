@@ -1,4 +1,4 @@
-name: Rust
+name: Rust Build, Test, & Release
 
 on:
   pull_request:
@@ -9,45 +9,34 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: stable
 
 jobs:
   style:
-    name: Check Style
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          components: rustfmt
-          profile: minimal
-          override: true
-      - name: Format
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: clippy
+      - name: Clippy
+        run: cargo clippy --all -- -D warnings -W clippy::pedantic
 
   test:
     name: Test
     needs: [style]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          override: true
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
+        run: cargo build --verbose
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose
+        run: cargo test --verbose --all-features
 
   deploy_linux:
     name: Deploy Linux
@@ -63,27 +52,19 @@ jobs:
             arm-unknown-linux-gnueabihf,
           ]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: ${{ matrix.target }}
-      - name: Build target
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target ${{ matrix.target }}
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --verbose --locked --release --target ${{ matrix.target }}
       - name: Package
         shell: bash
         run: |
-          tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C build/${{ matrix.target }}/release/ rocket-notify
+          tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ rocket-notify
       - name: Publish
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: "rocket-notify*"
 
@@ -96,27 +77,19 @@ jobs:
       matrix:
         target: [x86_64-apple-darwin, aarch64-apple-darwin]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: ${{ matrix.target }}
-      - name: Build target
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target ${{ matrix.target }}
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --verbose --locked --release --target ${{ matrix.target }}
       - name: Package
         shell: bash
         run: |
-          tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C build/${{ matrix.target }}/release/ rocket-notify
+          tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ rocket-notify
       - name: Publish
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: "rocket-notify*"
 
@@ -129,26 +102,18 @@ jobs:
       matrix:
         target: [x86_64-pc-windows-gnu]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: ${{ matrix.target }}
-      - name: Build target
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target ${{ matrix.target }}
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --verbose --locked --release --target ${{ matrix.target }}
       - name: Package
         shell: bash
         run: |
-          tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C build/${{ matrix.target }}/release/ rocket-notify.exe
+          tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ rocket-notify.exe
       - name: Publish
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: "rocket-notify*"

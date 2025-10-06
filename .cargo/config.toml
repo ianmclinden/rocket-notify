@@ -1,6 +1,3 @@
-[build]
-target-dir = "build" # path of where to place all generated artifacts
-
 [profile.debug]
 incremental = true # Incremental builds
 
