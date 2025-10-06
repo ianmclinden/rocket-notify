@@ -7,6 +7,7 @@ edition = "2024"
 
 [dependencies]
 chrono = { version = "0.4.42", features = ["serde"] }
+clap = { version = "4.5.48", features = ["derive", "env"] }
 csscolorparser = { version = "0.7.2", features = ["serde"] }
 hostname = "0.4.1"
 reqwest = { version = "0.12.23", features = [
@@ -15,5 +16,4 @@ reqwest = { version = "0.12.23", features = [
     "rustls-tls",
 ], default-features = false }
 serde = "1.0.228"
-structopt = { version = "0.3.26", default-features = false }
 thiserror = "2.0.17"
