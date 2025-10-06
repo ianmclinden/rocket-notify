@@ -1,9 +1,10 @@
-FROM rust:latest as builder
-WORKDIR /usr/src/myapp
+FROM rust:alpine AS builder
+WORKDIR /usr/src/rocket-notify
+RUN apk add --no-cache musl-dev
 COPY . .
-RUN cargo install --path .
+RUN cargo install --locked --path .
 
-FROM debian:bullseye-slim
+FROM alpine:latest
 LABEL org.opencontainers.image.authors="Ian McLinden"
 COPY --from=builder /usr/local/cargo/bin/rocket-notify /usr/local/bin/rocket-notify
 RUN mkdir -p /config
