@@ -21,7 +21,7 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           components: clippy
-      - name: Clippy
+      - name: cargo clippy
         run: cargo clippy --all -- -D warnings -W clippy::pedantic
 
   test:
@@ -33,45 +33,55 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
-      - name: Build
+      - name: cargo build
         run: cargo build --verbose
-      - name: Test
+      - name: cargo test
         run: cargo test --verbose --all-features
 
-  deploy_linux:
-    name: Deploy Linux
+  build_linux:
+    name: Build Linux
     needs: [test]
-    if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
-          [
-            x86_64-unknown-linux-gnu,
-            aarch64-unknown-linux-gnu,
-            arm-unknown-linux-gnueabihf,
-          ]
+        include:
+          - name: linux-amd64
+            target: x86_64-unknown-linux-gnu
+            packages: g++-x86-64-linux-gnu
+          - name: linux-aarch64
+            target: aarch64-unknown-linux-gnu
+            packages: g++-aarch64-linux-gnu
+          - name: linux-armhf
+            target: arm-unknown-linux-gnueabihf
+            packages: g++-arm-linux-gnueabihf
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           targets: ${{ matrix.target }}
-      - name: Build
+      - name: install ${{ matrix.packages }}
+        if: matrix.packages != ''
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install ${{ matrix.packages }}
+      - name: cargo build ${{ matrix.target }}
         run: cargo build --verbose --locked --release --target ${{ matrix.target }}
-      - name: Package
+      - name: package
+        if: ${{ github.event_name == 'release' }}
         shell: bash
         run: |
           tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ rocket-notify
-      - name: Publish
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
+        if: ${{ github.event_name == 'release' }}
         with:
           files: "rocket-notify*"
 
-  deploy_macos:
-    name: Deploy macOS
+  build_macos:
+    name: Build macOS
     needs: [test]
-    if: ${{ github.event_name == 'release' }}
     runs-on: macos-latest
     strategy:
       matrix:
@@ -82,38 +92,49 @@ jobs:
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           targets: ${{ matrix.target }}
-      - name: Build
+      - name: cargo build ${{ matrix.target }}
         run: cargo build --verbose --locked --release --target ${{ matrix.target }}
-      - name: Package
+      - name: package
+        if: ${{ github.event_name == 'release' }}
         shell: bash
         run: |
           tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ rocket-notify
-      - name: Publish
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
+        if: ${{ github.event_name == 'release' }}
         with:
           files: "rocket-notify*"
 
-  deploy_windows:
-    name: Deploy Windows
+  build_windows:
+    name: Build Windows
     needs: [test]
-    if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-pc-windows-gnu]
+        include:
+          - name: windows-amd64
+            target: x86_64-pc-windows-gnu
+            packages: g++-mingw-w64-x86-64
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           targets: ${{ matrix.target }}
-      - name: Build
+      - name: install ${{ matrix.packages }}
+        if: matrix.packages != ''
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install ${{ matrix.packages }}
+      - name: cargo build ${{ matrix.target }}
         run: cargo build --verbose --locked --release --target ${{ matrix.target }}
-      - name: Package
+      - name: package
+        if: ${{ github.event_name == 'release' }}
         shell: bash
         run: |
           tar -czvf rocket-notify-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ rocket-notify.exe
-      - name: Publish
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
+        if: ${{ github.event_name == 'release' }}
         with:
           files: "rocket-notify*"
