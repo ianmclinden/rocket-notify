@@ -1,0 +1,15 @@
+[package]
+name = "rocket-notify-cli"
+version = "1.2.1"
+description.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+clap = { version = "4.5.48", features = ["derive", "env"] }
+csscolorparser = { version = "0.8.3", features = ["serde"] }
+hostname = "0.4.2"
+rocketchat = { path = "../rocketchat" }
+
+[lints]
+workspace = true

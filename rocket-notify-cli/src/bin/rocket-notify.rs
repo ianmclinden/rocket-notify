@@ -1,6 +1,9 @@
 use clap::Parser;
 use csscolorparser::Color;
-use rocket_notify::rocketchat::{Attachment, Client, Message};
+use rocketchat::{
+    client::Client,
+    request::{Attachment, Message},
+};
 use std::{process, sync::LazyLock};
 
 static HOSTNAME: LazyLock<String> = LazyLock::new(|| {
@@ -14,7 +17,7 @@ static HOSTNAME: LazyLock<String> = LazyLock::new(|| {
 #[command(version, about, long_about, author)]
 struct Args {
     /// Rocket.Chat webhook URL
-    #[arg(short, long, env = "ROCKET_NOTIFY_URL", hide = true)]
+    #[arg(short, long, env = "ROCKET_NOTIFY_URL")]
     url: Option<String>,
 
     /// Alias for the message sender
@@ -22,16 +25,13 @@ struct Args {
     alias: String,
 
     /// Set the sender's icon to an emoji
-    #[arg(
-        short = 'i',
-        long = "icon",
-        default_value = ":computer:",
-        env = "ROCKET_NOTIFY_ICON"
-    )]
-    emoji: String,
+    #[arg(short, long, default_value = ":computer:", env = "ROCKET_NOTIFY_ICON")]
+    #[arg(value_name = "EMOJI", conflicts_with = "avatar")]
+    icon: String,
 
-    /// Set the sender's icon to the provided URL (replaces -i,--icon)
+    /// Set the sender's icon to the provided URL
     #[arg(short = 'A', long = "avatar", env = "ROCKET_NOTIFY_AVATAR")]
+    #[arg(value_name = "URL", conflicts_with = "icon")]
     avatar: Option<String>,
 
     /// Title of the message
@@ -85,13 +85,13 @@ fn main() {
                 .collapsed(args.minimize),
         );
 
-    message = if args.avatar.is_some() {
-        message.avatar(args.avatar.unwrap())
+    message = if let Some(avatar) = args.avatar {
+        message.avatar(avatar)
     } else {
-        message.emoji(args.emoji)
+        message.emoji(args.icon)
     };
 
-    match Client::new(&url).post_message(&message) {
+    match Client::new(&url).send(&message) {
         Err(e) => {
             print_err(e);
             process::exit(1);

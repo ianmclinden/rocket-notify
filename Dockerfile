@@ -2,7 +2,7 @@ FROM rust:alpine AS builder
 WORKDIR /usr/src/rocket-notify
 RUN apk add --no-cache musl-dev
 COPY . .
-RUN cargo install --locked --path .
+RUN cargo install --locked --path rocket-notify-cli
 
 FROM alpine:latest
 LABEL org.opencontainers.image.authors="Ian McLinden"

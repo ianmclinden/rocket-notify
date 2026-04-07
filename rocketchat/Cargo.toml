@@ -1,0 +1,28 @@
+[package]
+name = "rocketchat"
+description = "Simple client to send messages to Rocket.Chat"
+version = "1.3.0"
+authors.workspace = true
+edition.workspace = true
+
+[features]
+default = ["ureq", "rustls"]
+# HTTP client providers
+reqwest = ["dep:reqwest"]
+ureq = ["dep:ureq"]
+# TLS providers
+rustls = ["reqwest?/rustls", "ureq?/rustls"]
+native-tls = ["reqwest?/native-tls", "ureq?/native-tls"]
+
+[dependencies]
+chrono = { version = "0.4.44", features = ["serde"] }
+reqwest = { version = "0.13.2", features = [
+    "blocking",
+    "json",
+], optional = true }
+serde = "1.0.228"
+thiserror = "2.0.18"
+ureq = { version = "3.3.0", features = ["json"], optional = true }
+
+[lints]
+workspace = true
