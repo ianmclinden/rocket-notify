@@ -49,7 +49,7 @@ impl Message {
         }
     }
 
-    /// Set the room id of where the message is to be sent. Resets
+    /// Set the room id of where the message is to be sent. Resets the channel, if specified
     #[must_use]
     pub fn room_id<S: Into<String>>(mut self, room_id: S) -> Self {
         self.room_id = room_id.into();
@@ -59,7 +59,7 @@ impl Message {
         self
     }
 
-    /// Set the channel where the message is to be sent. Set the channel where the message is to be sent, with the prefix in front of it. `#` refers to channel, `@` refers to a username
+    /// Set the channel where the message is to be sent, with the prefix in front of it. `#` refers to channel, `@` refers to a username
     #[must_use]
     pub fn channel<S: Into<String>>(mut self, channel: S) -> Self {
         self.channel = channel.into();
