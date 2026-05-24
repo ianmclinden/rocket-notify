@@ -47,8 +47,8 @@ struct Args {
     minimize: bool,
 
     /// Channel to which the mesage will be sent, like '#general' or '@eric'
-    #[arg(env = "ROCKET_NOTIFY_CHANNEL")]
-    channel: String,
+    #[arg(short = 'C', long, env = "ROCKET_NOTIFY_CHANNEL")]
+    channel: Option<String>,
 
     /// Message to send
     #[arg(env = "ROCKET_NOTIFY_MESSAGE")]
@@ -74,7 +74,6 @@ fn main() {
     };
 
     let mut message = Message::new()
-        .channel(&args.channel)
         .text(&args.title)
         .alias(&args.alias)
         .attachment(
@@ -84,6 +83,12 @@ fn main() {
                 .color(args.color.to_css_hex())
                 .collapsed(args.minimize),
         );
+
+    message = if let Some(channel) = args.channel {
+        message.channel(channel)
+    } else {
+        message
+    };
 
     message = if let Some(avatar) = args.avatar {
         message.avatar(avatar)
