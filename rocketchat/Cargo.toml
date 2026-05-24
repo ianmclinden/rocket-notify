@@ -1,7 +1,7 @@
 [package]
 name = "rocketchat"
 description = "Simple client to send messages to Rocket.Chat"
-version = "1.3.0"
+version = "1.3.1"
 authors.workspace = true
 edition.workspace = true
 
@@ -16,7 +16,7 @@ native-tls = ["reqwest?/native-tls", "ureq?/native-tls"]
 
 [dependencies]
 chrono = { version = "0.4.44", features = ["serde"] }
-reqwest = { version = "0.13.2", features = [
+reqwest = { version = "0.13.3", features = [
     "blocking",
     "json",
 ], optional = true }
