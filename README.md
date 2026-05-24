@@ -60,12 +60,12 @@ export ROCKET_NOTIFY_URL=https://{webhookURL}
 ### Cli Usage
 
 ```sh
-rocket-notify [options] <channel> <message>
+rocket-notify [options] <message>
 ```
 
 For example
 ```sh
-rocket-notify --icon ":tada:" --alias "Project Builder" @myusername "Build Finished!"
+rocket-notify --icon ":tada:" --alias "Project Builder" "Build Finished!"
 ```
 
 For a full list of options
@@ -96,9 +96,6 @@ docker run \
 #### `ROCKET_NOTIFY_URL` *(Required)*
 Rocket.Chat webhook URL
 
-#### `ROCKET_NOTIFY_CHANNEL` *(Required)*
-Channel to which the mesage will be sent, like '#general' or '@eric'
-
 #### `ROCKET_NOTIFY_MESSAGE` *(Required)*
 Message to send
 
@@ -122,6 +119,9 @@ Set the sender's icon to an emoji
 
 #### `ROCKET_NOTIFY_MINIMIZE`
 Send with message block collapsed
+
+#### `ROCKET_NOTIFY_CHANNEL`
+Channel to which the mesage will be sent, like '#general' or '@eric'
 
 #### `ROCKET_NOTIFY_TITLE`
 Title of the message
